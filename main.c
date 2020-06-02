@@ -3,6 +3,89 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+typedef struct Queue {
+    int client_number;
+    Queue* next_client;
+}Queue; //FIFO dla klientów
+
+Queue *waiting = NULL; //kolejka dla czekających klientów (poczekalnia)
+Queue *resigned = NULL; //Lista klientów, którzy zrezygnowali z usługi
+
+Queue *last_waiting = NULL;
+Queue *last_resigned = NULL;
+
+void printQueues(){ //wypisywanie kolejek
+    if(waiting == NULL){ //wypisywanie kolejki oczekujących
+        puts("Waiting queue is empty");
+    }
+    else{
+        printf("Waiting queue: ")
+        Queue *curr = waiting;
+        printf("%d, ", curr->client_number);
+        while(curr->next_client != NULL){
+            curr = curr->next_client;
+            printf("%d, ", curr->client_number);
+        }
+        printf("\n")
+    }
+    if(resigned == NULL){ //wypisywanie kolejki klientów, którzy zrezygnowali
+        puts("Resigned queue is empty");
+    }
+    else{
+        printf("Resigned queue: ")
+        Queue *curr = resigned;
+        printf("%d, ", curr->client_number);
+        while(curr->next_client != NULL){
+            curr = curr->next_client;
+            printf("%d, ", curr->client_number);
+        }
+        printf("\n")
+    }
+}
+
+void add_to_waiting_queue(int number){ //dodawanie do kolejki klientów oczekujących
+    Queue *new = (Queue*)malloc(sizeof(Queue));
+    new->client_number = number;
+    new->next_client = NULL;
+    if( /* liczba oczekujących == 0*/){ //pusta kolejka
+        waiting = new; //ustawienie pierwszego klienta
+    }
+    else{
+        last_waiting->next_client = new; //dodanie klienta do kolejki
+    }
+    last_waiting = new; //ustawienie ostatniego klienta
+    //liczba oczekujących +1
+}
+
+void add_to_resigned_queue(int number){ //dodawanie do kolejki klientów, którzy zrezygnowali
+    Queue *new = (Queue*)malloc(sizeof(Queue));
+    new->client_number = number;
+    new->next_client = NULL;
+    if( last_waiting == NULL){ //pusta kolejka
+        resigned = new; //ustawianie pierwszego elementu
+    }
+    else{
+        last_waiting->next_client = new; //dodawanie klienta do kolejki
+    }
+    last_waiting = new; //ustawienie ostatniego elementu kolejki
+}
+
+void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
+    if(waiting->next_client == NULL){ //jeśli był sam to zwalniamy pamięć
+        free(waiting);
+    }
+    else{ //jeśli nie to usuwamy pierwszego klienta z kolejki
+        Queue* first = waiting;
+        waiting = first->next_client;
+        free(first);
+    }
+}
+
 
 void *printString(void *ptr);
 
