@@ -104,7 +104,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     if(freeSpots){ //jeśli są wolnej miejsca TODO chyba najpierw trzeba dać mutex na wolne miejsca żeby je sprawdzić, żeby między odczytaniem a dodaniem do kolejki nie dodał się inny wątek,b o potem się okaże że nie ma miejsca
         pthread_mutex_lock(&waitingRoom); //blokujemy poczekalnię
         add_to_waiting_queue(nr_client); //dodajemy klienta do klientów czekających w poczekalni
-        sem_post(&client); //?
+        sem_post(&client); //daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
@@ -113,8 +113,9 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
     }
 }
+
 void *hairdresserRoom(){
-    sem_wait(&client);//tutaj śpi, czyli czeka na klienta
+    sem_wait(&client);//tutaj śpi, czyli czeka na klienta TODO tylko co jeśli klient przyjdzie do fryzjera jak fotel jest zajęty
     pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
     freeSpots++; //
     //obsługa pierwszego w kolejce wątku
