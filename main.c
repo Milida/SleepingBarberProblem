@@ -19,6 +19,9 @@ Queue *resigned = NULL; //Lista klientów, którzy zrezygnowali z usługi
 Queue *last_waiting = NULL;
 Queue *last_resigned = NULL;
 
+sem_t client;
+sem_t hairdresser;
+
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
 
@@ -96,7 +99,8 @@ pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 int main(int argc, char *argv[]) {
     //sprawdzanie jakie opcje podał użytkownik (znowu getopt jak poprzednio tylko parametry inne)
 
-
+    //sem_init(&client,0,0);
+    //sem_init(&hairdresser);
     // drukarka z mutexem
     pthread_t threads[2];
     int iret1;
