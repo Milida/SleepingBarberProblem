@@ -27,6 +27,7 @@ pthread_mutex_t armchair;
 
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
+int resignedClients= 0;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -81,6 +82,7 @@ void add_to_resigned_queue(int number){ //dodawanie do kolejki klientów, którz
         last_waiting->next_client = new; //dodawanie klienta do kolejki
     }
     last_waiting = new; //ustawienie ostatniego elementu kolejki
+    resignedClients++;
 }
 
 void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
@@ -97,8 +99,8 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
 
 void *printString(void *ptr);
 
-void *newClient(void *number){
-    int nr_client = *(int *)number;
+void *newClient(void *num){
+    int nr_client = *(int *)num;
     if(freeSpots){
         pthread_mutex_lock(&waitingRoom);
         add_to_waiting_queue(nr_client);
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]) {
     //sprawdzanie jakie opcje podał użytkownik (znowu getopt jak poprzednio tylko parametry inne)
 
     //sem_init(&client,0,0);
-    //sem_init(&hairdresser);
+    //sem_init(&hairdresser,0,0);
     // drukarka z mutexem
     pthread_t threads[2];
     int iret1;
