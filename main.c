@@ -27,7 +27,7 @@ pthread_mutex_t armchair;
 
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
-int resignedClients= 0;
+int resignedClients= 0; // liczba klientów, którzy zrezygnowali z wizyty
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -101,8 +101,9 @@ void *printString(void *ptr);
 
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     int nr_client = *(int *)num;
-    if(freeSpots){ //jeśli są wolnej miejsca TODO chyba najpierw trzeba dać mutex na wolne miejsca żeby je sprawdzić, żeby między odczytaniem a dodaniem do kolejki nie dodał się inny wątek,b o potem się okaże że nie ma miejsca
-        pthread_mutex_lock(&waitingRoom); //blokujemy poczekalnię
+    pthread_mutex_lock(&waitingRoom); //blokujemy poczekalnię
+
+    if(freeSpots){ //jeśli są wolnej miejsca
         add_to_waiting_queue(nr_client); //dodajemy klienta do klientów czekających w poczekalni
         sem_post(&client); //daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
@@ -110,6 +111,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
     }
     else{
+        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
     }
 }
