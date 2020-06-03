@@ -98,21 +98,20 @@ int main(int argc, char *argv[]) {
 
 
     // drukarka z mutexem
-    pthread_t thread1, thread2;
+    pthread_t threads[2] = (pthread_t*)malloc(sizeof(pthread_t));
     int iret1;
 
-    iret1 = pthread_create( &thread1, NULL, printString, "HELLO WORLD ");
+    iret1 = pthread_create( &threads[1], NULL, printString, "HELLO WORLD ");
     if(iret1) {
         fprintf(stderr,"Error - pthread_create() return code: %d\n",iret1);
         exit(EXIT_FAILURE);
     }
 
-    iret1 = pthread_create( &thread2, NULL, printString, "ala ma kota ");
+    iret1 = pthread_create( &threads[2], NULL, printString, "ala ma kota ");
     if(iret1) {
         fprintf(stderr,"Error - pthread_create() return code: %d\n",iret1);
         exit(EXIT_FAILURE);
     }
-
     pthread_join( thread1, NULL);
     pthread_join( thread2, NULL);
 
