@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <semaphore.h>
 
 typedef struct Queue {
     int client_number;
@@ -21,6 +22,8 @@ Queue *last_resigned = NULL;
 
 sem_t client;
 sem_t hairdresser;
+pthread_mutex_t waitingRoom;
+pthread_mutex_t armchair;
 
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
@@ -93,6 +96,31 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
 
 
 void *printString(void *ptr);
+
+void *newClient(void *number){
+    int nr_client = *(int *)number;
+    if(freeSpots){
+        pthread_mutex_lock(&waitingRoom);
+        add_to_waiting_queue(nr_client);
+        sem_post(&client);
+        pthread_mutex_unlock(&waitingRoom);
+        sem_wait(&hairdresser);
+        pthread_mutex_lock(&armchair);
+    }
+    else{
+        add_to_resigned_queue(nr_client);
+    }
+}
+void *hairdresserRoom(){
+    sem_wait(&client);//tutaj śpi, czyli czeka na klienta
+    pthread_mutex_lock(&waitingRoom);
+    freeSpots++
+    pthread_mutex_unlock(&waitingRoom);
+    //po ostrzyżeniu zwalnia się fotel
+    pthread_mutex_unlock(&armchair);
+}
+
+
 
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
