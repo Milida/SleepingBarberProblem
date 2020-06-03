@@ -116,7 +116,7 @@ void *newClient(void *num){
 void *hairdresserRoom(){
     sem_wait(&client);//tutaj śpi, czyli czeka na klienta
     pthread_mutex_lock(&waitingRoom);
-    freeSpots++
+    freeSpots++;
     pthread_mutex_unlock(&waitingRoom);
     //po ostrzyżeniu zwalnia się fotel
     pthread_mutex_unlock(&armchair);
