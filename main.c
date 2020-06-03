@@ -101,19 +101,19 @@ int main(int argc, char *argv[]) {
     pthread_t threads[2];
     int iret1;
 
-    iret1 = pthread_create( &threads[1], NULL, printString, "HELLO WORLD ");
+    iret1 = pthread_create( &threads[0], NULL, printString, "HELLO WORLD ");
     if(iret1) {
         fprintf(stderr,"Error - pthread_create() return code: %d\n",iret1);
         exit(EXIT_FAILURE);
     }
 
-    iret1 = pthread_create( &threads[2], NULL, printString, "ala ma kota ");
+    iret1 = pthread_create( &threads[1], NULL, printString, "ala ma kota ");
     if(iret1) {
         fprintf(stderr,"Error - pthread_create() return code: %d\n",iret1);
         exit(EXIT_FAILURE);
     }
+    pthread_join( threads[0], NULL);
     pthread_join( threads[1], NULL);
-    pthread_join( threads[2], NULL);
 
     exit(0);
 }
