@@ -17,8 +17,8 @@ typedef struct Queue {
 Queue *waiting = NULL; //kolejka dla czekających klientów (poczekalnia)
 Queue *resigned = NULL; //Lista klientów, którzy zrezygnowali z usługi
 
-Queue *last_waiting = NULL;
-Queue *last_resigned = NULL;
+Queue *last_waiting = NULL; //trzyma ostatnią osobę która czeka, żeby łatwo dodać na koniec kolejki
+Queue *last_resigned = NULL; //nie wiadomo czy będzie potrzebne
 
 sem_t client;
 sem_t hairdresser;
@@ -99,27 +99,27 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
 
 void *printString(void *ptr);
 
-void *newClient(void *num){
+void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     int nr_client = *(int *)num;
-    if(freeSpots){
-        pthread_mutex_lock(&waitingRoom);
-        add_to_waiting_queue(nr_client);
-        sem_post(&client);
-        pthread_mutex_unlock(&waitingRoom);
-        sem_wait(&hairdresser);
-        pthread_mutex_lock(&armchair);
+    if(freeSpots){ //jeśli są wolnej miejsca TODO chyba najpierw trzeba dać mutex na wolne miejsca żeby je sprawdzić, żeby między odczytaniem a dodaniem do kolejki nie dodał się inny wątek,b o potem się okaże że nie ma miejsca
+        pthread_mutex_lock(&waitingRoom); //blokujemy poczekalnię
+        add_to_waiting_queue(nr_client); //dodajemy klienta do klientów czekających w poczekalni
+        sem_post(&client); //?
+        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
+        sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
+        pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
     }
     else{
-        add_to_resigned_queue(nr_client);
+        add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
     }
 }
 void *hairdresserRoom(){
     sem_wait(&client);//tutaj śpi, czyli czeka na klienta
-    pthread_mutex_lock(&waitingRoom);
-    freeSpots++;
-    pthread_mutex_unlock(&waitingRoom);
-    //po ostrzyżeniu zwalnia się fotel
-    pthread_mutex_unlock(&armchair);
+    pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
+    freeSpots++; //
+    //obsługa pierwszego w kolejce wątku
+    pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
+    pthread_mutex_unlock(&armchair); //odblokowanie fotela
 }
 
 
