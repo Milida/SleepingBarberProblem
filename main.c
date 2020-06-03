@@ -34,20 +34,20 @@ void printQueues(){ //wypisywanie kolejek
             curr = curr->next_client;
             printf("%d, ", curr->client_number);
         }
-        printf("\n")
+        printf("\n");
     }
     if(resigned == NULL){ //wypisywanie kolejki klientów, którzy zrezygnowali
         puts("Resigned queue is empty");
     }
     else{
-        printf("Resigned queue: ")
+        printf("Resigned queue: ");
         Queue *curr = resigned;
         printf("%d, ", curr->client_number);
         while(curr->next_client != NULL){
             curr = curr->next_client;
             printf("%d, ", curr->client_number);
         }
-        printf("\n")
+        printf("\n");
     }
 }
 
