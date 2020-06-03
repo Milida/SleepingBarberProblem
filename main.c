@@ -96,8 +96,24 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
     }
 }
 
+// "drukarka" drukujaca na ekran po jednym znaku
+void screenPrinter(char c) {
+    printf("%c\n",c);
+    // drukarka drukuje 4 znaki/s
+    usleep(250*1000);
+}
 
-void *printString(void *ptr);
+void *printString( void *ptr ) {
+    char *message;
+    message = (char *) ptr;
+    int len = strlen(message);
+    int i = 0;
+
+    // drukowanie wiadomosci znak po znaku
+    for(i=0; i<len; i++) {
+        screenPrinter(message[i]);
+    }
+}
 
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     int nr_client = *(int *)num;
@@ -125,8 +141,6 @@ void *hairdresserRoom(){
     pthread_mutex_unlock(&armchair); //odblokowanie fotela
 }
 
-
-
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 int main(int argc, char *argv[]) {
@@ -153,24 +167,4 @@ int main(int argc, char *argv[]) {
     pthread_join( threads[1], NULL);
 
     exit(0);
-}
-
-// "drukarka" drukujaca na ekran po jednym znaku
-void screenPrinter(char c) {
-    printf("%c\n",c);
-    // drukarka drukuje 4 znaki/s
-    usleep(250*1000);
-}
-
-
-void *printString( void *ptr ) {
-    char *message;
-    message = (char *) ptr;
-    int len = strlen(message);
-    int i = 0;
-
-    // drukowanie wiadomosci znak po znaku
-    for(i=0; i<len; i++) {
-        screenPrinter(message[i]);
-    }
 }
