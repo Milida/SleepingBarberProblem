@@ -10,7 +10,7 @@
 
 typedef struct Queue {
     int client_number;
-    Queue* next_client;
+    struct Queue* next_client;
 }Queue; //FIFO dla klientów
 
 Queue *waiting = NULL; //kolejka dla czekających klientów (poczekalnia)
@@ -27,7 +27,7 @@ void printQueues(){ //wypisywanie kolejek
         puts("Waiting queue is empty");
     }
     else{
-        printf("Waiting queue: ")
+        printf("Waiting queue: ");
         Queue *curr = waiting;
         printf("%d, ", curr->client_number);
         while(curr->next_client != NULL){
@@ -51,18 +51,17 @@ void printQueues(){ //wypisywanie kolejek
     }
 }
 
-void add_to_waiting_queue(int number){ //dodawanie do kolejki klientów oczekujących
+void add_to_waiting_queue(int number){ //dodawanie do kolejki klientów oczekujących; brak wywołania jeśli jest pełna
     Queue *new = (Queue*)malloc(sizeof(Queue));
     new->client_number = number;
     new->next_client = NULL;
-    if( /* liczba oczekujących == 0*/){ //pusta kolejka
+    if (spots == freeSpots) { //pusta kolejka
         waiting = new; //ustawienie pierwszego klienta
-    }
-    else{
+    } else { //są jeszcze wolne miejsca
         last_waiting->next_client = new; //dodanie klienta do kolejki
     }
     last_waiting = new; //ustawienie ostatniego klienta
-    //liczba oczekujących +1
+    freeSpots--; //miejsce jest zajęte
 }
 
 void add_to_resigned_queue(int number){ //dodawanie do kolejki klientów, którzy zrezygnowali
@@ -135,6 +134,7 @@ void *printString( void *ptr ) {
     int i = 0;
 
     // drukowanie wiadomosci znak po znaku
-    for(i=0; i<len; i++){
+    for(i=0; i<len; i++) {
         screenPrinter(message[i]);
+    }
 }
