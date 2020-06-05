@@ -175,15 +175,16 @@ int main(int argc, char *argv[]) {
     pthread_t haird;
     int iret;
     int iret2;
-    iret2 = pthread_create(&threads[i], NULL, hairdresserRoom , NULL);
-    if (iret2) {
-        fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
-        exit(EXIT_FAILURE);
-    }
+    //iret2 = pthread_create(&haird, NULL, hairdresserRoom , NULL);
+   // if (iret2) {
+    //    fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
+    //    exit(EXIT_FAILURE);
+   // }
     int arg[clients];
     for(int i = 0; i < clients; i++) {
         arg[i] = i;
-        iret = pthread_create(&threads[i], NULL, newClient, &arg[i]);
+        //iret = pthread_create(&threads[i], NULL, newClient, &arg[i]);
+        iret = pthread_create(&threads[i], NULL, printString, &arg[i]);
         if (iret) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
@@ -192,13 +193,11 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < clients; i++){
         pthread_join(threads[i], NULL);
     }
-    pthread_join(haird, NULL);
+    //pthread_join(haird, NULL);
 
     sem_destroy(&client);
     sem_destroy(&hairdresser);
     pthread_mutex_destroy(&waitingRoom);
     pthread_mutex_destroy(&armchair);
-  //  free(waiting);
-  //  free(resigned);
     exit(EXIT_SUCCESS);
 }
