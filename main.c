@@ -27,7 +27,8 @@ pthread_mutex_t armchair;
 
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
-int resignedClients= 0; // liczba klientów, którzy zrezygnowali z wizyty
+int resignedClients = 0; // liczba klientów, którzy zrezygnowali z wizyty
+int clients = 10;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -113,6 +114,7 @@ void *printString( void *ptr ) {
     for(i=0; i<len; i++) {
         screenPrinter(message[i]);
     }
+    pthread_exit(0);
 }
 
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
@@ -149,22 +151,17 @@ int main(int argc, char *argv[]) {
     //sem_init(&client,0,0);
     //sem_init(&hairdresser,0,0);
     // drukarka z mutexem
-    pthread_t threads[2];
-    int iret1;
-
-    iret1 = pthread_create( &threads[0], NULL, printString, "HELLO WORLD ");
-    if(iret1) {
-        fprintf(stderr,"Error - pthread_create() return code: %d\n",iret1);
-        exit(EXIT_FAILURE);
+    pthread_t threads[clients];
+    int iret;
+    for(int i = 0; i < clients; i++) {
+        iret = pthread_create(&threads[i], NULL, printString, "HELLO WORLD ");
+        if (iret1) {
+            fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
+            exit(EXIT_FAILURE);
+        }
     }
-
-    iret1 = pthread_create( &threads[1], NULL, printString, "ala ma kota ");
-    if(iret1) {
-        fprintf(stderr,"Error - pthread_create() return code: %d\n",iret1);
-        exit(EXIT_FAILURE);
+    for(int i = 0; i < clients; i++){
+        pthread_join(threads[i], NULL)
     }
-    pthread_join( threads[0], NULL);
-    pthread_join( threads[1], NULL);
-
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
