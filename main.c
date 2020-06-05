@@ -30,6 +30,7 @@ int freeSpots = 7; //ilość wolnych miejsc
 int resignedClients = 0; // liczba klientów, którzy zrezygnowali z wizyty
 int clients = 10;
 int actualClient = 0;
+int currentClient = NULL;
 pthread_mutex_t printActualClient;
 pthread_mutex_t queueOperations;
 
@@ -147,10 +148,13 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
+        currentClient = nr_client;
+        printf("Res:%d WRomm: %d/&d [in: %d]", resigned, spots - freeSpots, spots,  currentClient);
     }
     else{
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
+        printf("Res:%d WRomm: %d/&d [in: %d]", resigned, spots - freeSpots, spots,  currentClient);
     }
 }
 
@@ -162,6 +166,7 @@ void *hairdresserRoom(){
     freeSpots++; //
     //obsługa pierwszego w kolejce wątku
     pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
+    printf("Res:%d WRomm: %d/&d [in: %d]", resigned, spots - freeSpots, spots,  currentClient);
     pthread_mutex_unlock(&armchair); //odblokowanie fotela
 }
 
