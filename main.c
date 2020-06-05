@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
     int arg[clients];
     for(int i = 0; i < clients; i++) {
         arg[i] = i;
-        //iret = pthread_create(&threads[i], NULL, newClient, &arg[i]);
-        iret = pthread_create(&threads[i], NULL, printString, &arg[i]);
+        //iret = pthread_create(&threads[i], NULL, newClient, (void*)&arg[i]);
+        iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
         if (iret) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
