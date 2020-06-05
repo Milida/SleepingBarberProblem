@@ -162,7 +162,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
 }
 
 void *hairdresserRoom(){
-    sem_post(&hairdresser);
+    //sem_post(&hairdresser);
     while(waiting != NULL){
         //tak jak sobie czytam, to tutaj sem_wait(&client) blokujemy klienta, czyli powinniśmy chyba dać później sem_post(&hairdresser)
         // czyli wtedy fryzjer zaprasza czekającego klienta na fotel i wtedy dopiero dodajemy wolne miejsce w poczekalni i odblokowujemy poczekalnie
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < clients; i++){
         pthread_join(threads[i], NULL);
     }
-    //pthread_join(haird, NULL);
+    pthread_join(haird, NULL);
 
     sem_destroy(&client);
     sem_destroy(&hairdresser);
