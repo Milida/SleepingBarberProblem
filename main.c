@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <semaphore.h>
+#include <stdbool.h> //używanie typu bool
 
 typedef struct Queue {
     int client_number;
@@ -80,13 +81,13 @@ void add_to_resigned_queue(int number){ //dodawanie do kolejki klientów, którz
     Queue *new = (Queue*)malloc(sizeof(Queue));
     new->client_number = number;
     new->next_client = NULL;
-    if( last_waiting == NULL){ //pusta kolejka
+    if( last_resigned == NULL){ //pusta kolejka
         resigned = new; //ustawianie pierwszego elementu
     }
     else{
-        last_waiting->next_client = new; //dodawanie klienta do kolejki
+        last_resigned->next_client = new; //dodawanie klienta do kolejki
     }
-    last_waiting = new; //ustawienie ostatniego elementu kolejki
+    last_resigned = new; //ustawienie ostatniego elementu kolejki
     resignedClients++;
 }
 
@@ -170,6 +171,19 @@ void *hairdresserRoom(){
     pthread_mutex_unlock(&armchair); //odblokowanie fotela
 }
 
+void cleanQueue(){
+    if(resigned == NULL){
+        return;
+    }
+    while(resigned->next_client != NULL){ //jeśli był sam to zwalniamy pamięć
+        Queue* x = resigned;
+        resigned = resigned->next_client;
+        free(x);
+    }
+    free(resigned);
+    resigned = NULL;
+}
+
 int main(int argc, char *argv[]) {
     //sprawdzanie jakie opcje podał użytkownik (znowu getopt jak poprzednio tylko parametry inne)
 
@@ -188,8 +202,8 @@ int main(int argc, char *argv[]) {
     int arg[clients];
     for(int i = 0; i < clients; i++) {
         arg[i] = i;
-        //iret = pthread_create(&threads[i], NULL, newClient, (void*)&arg[i]);
-        iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
+        iret = pthread_create(&threads[i], NULL, newClient, (void*)&arg[i]);
+        //iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
         if (iret) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
@@ -199,7 +213,7 @@ int main(int argc, char *argv[]) {
         pthread_join(threads[i], NULL);
     }
     //pthread_join(haird, NULL);
-
+    cleanQueue();
     sem_destroy(&client);
     sem_destroy(&hairdresser);
     pthread_mutex_destroy(&waitingRoom);
