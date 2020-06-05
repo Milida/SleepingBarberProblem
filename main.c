@@ -151,27 +151,46 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
         currentClient = nr_client;
-        printf("Res:%d WRomm: %d/%d [in: %d]", resignedClients, spots - freeSpots, spots,  currentClient);
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
     }
     else{
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
         printQueues();
-        printf("Res:%d WRomm: %d/%d [in: %d]", resignedClients, spots - freeSpots, spots,  currentClient);
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
     }
 }
 
 void *hairdresserRoom(){
-    //tak jak sobie czytam, to tutaj sem_wait(&client) blokujemy klienta, czyli powinniśmy chyba dać później sem_post(&hairdresser)
-    // czyli wtedy fryzjer zaprasza czekającego klienta na fotel i wtedy dopiero dodajemy wolne miejsce w poczekalni i odblokowujemy poczekalnie
-    sem_wait(&client);//tutaj śpi, czyli czeka na klienta TODO tylko co jeśli klient przyjdzie do fryzjera jak fotel jest zajęty
-    pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
-    freeSpots++; //
-    //obsługa pierwszego w kolejce wątku
-    pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-    printf("Res:%d WRomm: %d/%d [in: %d]", resignedClients, spots - freeSpots, spots,  currentClient);
-    pthread_mutex_unlock(&armchair); //odblokowanie fotela
+    sem_post(&hairdresser);
+    while(waiting != NULL){
+        //tak jak sobie czytam, to tutaj sem_wait(&client) blokujemy klienta, czyli powinniśmy chyba dać później sem_post(&hairdresser)
+        // czyli wtedy fryzjer zaprasza czekającego klienta na fotel i wtedy dopiero dodajemy wolne miejsce w poczekalni i odblokowujemy poczekalnie
+        sem_wait(&client);//tutaj śpi, czyli czeka na klienta TODO tylko co jeśli klient przyjdzie do fryzjera jak fotel jest zajęty
+        pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
+        freeSpots++;//
+        delete_from_waiting_queue();
+        //obsługa pierwszego w kolejce wątku
+        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
+        printQueues();
+        //printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
+        pthread_mutex_unlock(&armchair); //odblokowanie fotela
+        sem_post(&hairdresser);
+    }
 }
+
+void clean_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
+    if(resigned == NULL){
+        return;
+    }
+    while(resigned->next_client != NULL){ //jeśli był sam to zwalniamy pamięć
+        Queue* x = resigned;
+        resigned = resigned->next_client;
+        free(x);
+    }
+    free(resigned);
+}
+
 
 int main(int argc, char *argv[]) {
     //sprawdzanie jakie opcje podał użytkownik (znowu getopt jak poprzednio tylko parametry inne)
@@ -183,11 +202,11 @@ int main(int argc, char *argv[]) {
     pthread_t haird;
     int iret;
     int iret2;
-    //iret2 = pthread_create(&haird, NULL, hairdresserRoom , NULL);
-    // if (iret2) {
-    //    fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
-    //    exit(EXIT_FAILURE);
-    // }
+    iret2 = pthread_create(&haird, NULL, hairdresserRoom , NULL);
+    if (iret2) {
+        fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
+        exit(EXIT_FAILURE);
+    }
     int arg[clients];
     for(int i = 0; i < clients; i++) {
         arg[i] = i;
@@ -207,5 +226,6 @@ int main(int argc, char *argv[]) {
     sem_destroy(&hairdresser);
     pthread_mutex_destroy(&waitingRoom);
     pthread_mutex_destroy(&armchair);
+    clean_queue();
     exit(EXIT_SUCCESS);
 }
