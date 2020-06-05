@@ -155,13 +155,13 @@ int main(int argc, char *argv[]) {
     int iret;
     for(int i = 0; i < clients; i++) {
         iret = pthread_create(&threads[i], NULL, printString, "HELLO WORLD ");
-        if (iret1) {
+        if (iret) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
         }
     }
     for(int i = 0; i < clients; i++){
-        pthread_join(threads[i], NULL)
+        pthread_join(threads[i], NULL);
     }
     exit(EXIT_SUCCESS);
 }
