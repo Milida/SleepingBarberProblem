@@ -29,6 +29,8 @@ int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
 int resignedClients = 0; // liczba klientów, którzy zrezygnowali z wizyty
 int clients = 10;
+int actualClient = 0;
+pthread_mutex_t printActualClient;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -98,14 +100,20 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
 }
 
 // "drukarka" drukujaca na ekran po jednym znaku
-void screenPrinter(char c) {
-    printf("%c\n",c);
+void screenPrinter(char c, int number) {
+    printf("%c %d\n",c, number);
     // drukarka drukuje 4 znaki/s
-    usleep(250*1000);
+    usleep(250*1000); //w przypadku jak obecnie sleep tylko spowalnia
 }
 
 void *printString( void *ptr ) {
-    char *message;
+    int* num = (int*) ptr;
+    int number = *num;
+    pthread_mutex_lock(&printActualClient);
+    screenPrinter(actualClient + '0', number);
+    actualClient++;
+    pthread_mutex_unlock(&printActualClient);
+    /*char *message;
     message = (char *) ptr;
     int len = strlen(message);
     int i = 0;
@@ -114,7 +122,7 @@ void *printString( void *ptr ) {
     for(i=0; i<len; i++) {
         screenPrinter(message[i]);
     }
-    pthread_exit(0);
+    pthread_exit(0);*/
 }
 
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
@@ -153,8 +161,10 @@ int main(int argc, char *argv[]) {
     // drukarka z mutexem
     pthread_t threads[clients];
     int iret;
+    int arg[clients];
     for(int i = 0; i < clients; i++) {
-        iret = pthread_create(&threads[i], NULL, printString, "HELLO WORLD ");
+        arg[i] = i;
+        iret = pthread_create(&threads[i], NULL, printString, &arg[i]);
         if (iret) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
