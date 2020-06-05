@@ -22,8 +22,8 @@ Queue *last_resigned = NULL; //nie wiadomo czy będzie potrzebne
 
 sem_t client;
 sem_t hairdresser;
-pthread_mutex_t waitingRoom;
-pthread_mutex_t armchair;
+pthread_mutex_t waitingRoom = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t armchair = PTHREAD_MUTEX_INITIALIZER;
 
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
@@ -155,6 +155,8 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
 }
 
 void *hairdresserRoom(){
+    //tak jak sobie czytam, to tutaj sem_wait(&client) blokujemy klienta, czyli powinniśmy chyba dać później sem_post(&hairdresser)
+    // czyli wtedy fryzjer zaprasza czekającego klienta na fotel i wtedy dopiero dodajemy wolne miejsce w poczekalni i odblokowujemy poczekalnie
     sem_wait(&client);//tutaj śpi, czyli czeka na klienta TODO tylko co jeśli klient przyjdzie do fryzjera jak fotel jest zajęty
     pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
     freeSpots++; //
@@ -163,20 +165,25 @@ void *hairdresserRoom(){
     pthread_mutex_unlock(&armchair); //odblokowanie fotela
 }
 
-pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
-
 int main(int argc, char *argv[]) {
     //sprawdzanie jakie opcje podał użytkownik (znowu getopt jak poprzednio tylko parametry inne)
 
-    //sem_init(&client,0,0);
-    //sem_init(&hairdresser,0,0);
+    sem_init(&client,0,0);
+    sem_init(&hairdresser,0,0);
     // drukarka z mutexem
     pthread_t threads[clients];
+    pthread_t haird;
     int iret;
+    int iret2;
+    iret2 = pthread_create(&threads[i], NULL, hairdresserRoom , NULL);
+    if (iret2) {
+        fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
+        exit(EXIT_FAILURE);
+    }
     int arg[clients];
     for(int i = 0; i < clients; i++) {
         arg[i] = i;
-        iret = pthread_create(&threads[i], NULL, printString, &arg[i]);
+        iret = pthread_create(&threads[i], NULL, newClient, &arg[i]);
         if (iret) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
@@ -185,5 +192,13 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < clients; i++){
         pthread_join(threads[i], NULL);
     }
+    pthread_join(haird, NULL);
+
+    sem_destroy(&client);
+    sem_destroy(&hairdresser);
+    pthread_mutex_destroy(&waitingRoom);
+    pthread_mutex_destroy(&armchair);
+  //  free(waiting);
+  //  free(resigned);
     exit(EXIT_SUCCESS);
 }
