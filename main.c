@@ -31,6 +31,7 @@ int resignedClients = 0; // liczba klientów, którzy zrezygnowali z wizyty
 int clients = 10;
 int actualClient = 0;
 pthread_mutex_t printActualClient;
+pthread_mutex_t queueOperations;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -65,7 +66,7 @@ void add_to_waiting_queue(int number){ //dodawanie do kolejki klientów oczekuj�
     Queue *new = (Queue*)malloc(sizeof(Queue));
     new->client_number = number;
     new->next_client = NULL;
-    if (spots == freeSpots) { //pusta kolejka
+    if (last_waiting == NULL) { //pusta kolejka
         waiting = new; //ustawienie pierwszego klienta
     } else { //są jeszcze wolne miejsca
         last_waiting->next_client = new; //dodanie klienta do kolejki
@@ -90,7 +91,10 @@ void add_to_resigned_queue(int number){ //dodawanie do kolejki klientów, którz
 
 void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
     if(waiting->next_client == NULL){ //jeśli był sam to zwalniamy pamięć
-        free(waiting);
+        Queue* x = waiting;
+        free(x);
+        waiting = NULL;
+        last_waiting = NULL;
     }
     else{ //jeśli nie to usuwamy pierwszego klienta z kolejki
         Queue* first = waiting;
@@ -109,10 +113,18 @@ void screenPrinter(char c, int number) {
 void *printString( void *ptr ) {
     int* num = (int*) ptr;
     int number = *num;
+    pthread_mutex_lock(&queueOperations);
+    add_to_waiting_queue(number);
+    printQueues();
+    pthread_mutex_unlock(&queueOperations);
     pthread_mutex_lock(&printActualClient);
     screenPrinter(actualClient + '0', number);
     actualClient++;
     pthread_mutex_unlock(&printActualClient);
+    pthread_mutex_lock(&queueOperations);
+    delete_from_waiting_queue();
+    printQueues();
+    pthread_mutex_unlock(&queueOperations);
     /*char *message;
     message = (char *) ptr;
     int len = strlen(message);
@@ -121,8 +133,8 @@ void *printString( void *ptr ) {
     // drukowanie wiadomosci znak po znaku
     for(i=0; i<len; i++) {
         screenPrinter(message[i]);
-    }
-    pthread_exit(0);*/
+    }*/
+    pthread_exit(0);
 }
 
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
