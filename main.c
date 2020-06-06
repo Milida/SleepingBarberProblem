@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     int choice;
 
 
-    if (argc <= 2) {
+   /* if (argc <= 2) {
         puts("Too few arguments");
         exit(EXIT_FAILURE);
     }
@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
             }
         }
-
+*/
         printf("clients: %d\n", clients);
         printf("spots: %d\n", spots);
         printf("haircuttingTime: %d\n", haircuttingTime);
