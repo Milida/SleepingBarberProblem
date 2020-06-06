@@ -29,7 +29,7 @@ pthread_mutex_t armchair = PTHREAD_MUTEX_INITIALIZER;
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
 int resignedClients = 0; // liczba klientów, którzy zrezygnowali z wizyty
-int clients = 10;
+int clients = 40;
 int actualClient = 0;
 int currentClient = -1;
 int passedClients = 0;
@@ -139,7 +139,7 @@ void *hairdresserRoom(){
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        //sleep(2);
+        sleep(5);
         pthread_mutex_unlock(&armchair); //odblokowanie fotela
         sem_post(&hairdresser);
     }
@@ -161,38 +161,101 @@ void clean_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
 int main(int argc, char *argv[]) {
     //sprawdzanie jakie opcje podał użytkownik (znowu getopt jak poprzednio tylko parametry inne)
 
-    sem_init(&client,0,0);
-    sem_init(&hairdresser,0,0);
+    sem_init(&client, 0, 0);
+    sem_init(&hairdresser, 0, 0);
     // drukarka z mutexem
     pthread_t threads[clients];
     pthread_t haird;
     int iret;
     int iret2;
-    iret2 = pthread_create(&haird, NULL, hairdresserRoom , NULL);
-    if (iret2) {
-        fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
+
+    int haircuttingTime;
+    int clientsTime;
+    bool debug = false;
+    int choice;
+
+
+   /* if (argc <= 2) {
+        puts("Too few arguments");
         exit(EXIT_FAILURE);
     }
-    int arg[clients];
-    for(int i = 0; i < clients; i++) {
-        arg[i] = i;
-        iret = pthread_create(&threads[i], NULL, newClient, (void*)&arg[i]);
-        //iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
-        if (iret) {
-            fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
+    if (argc > 10) {
+        puts("Too many arguments");
+        exit(EXIT_FAILURE);
+
+        while ((choice = getopt(argc, argv, ":n:s:h:c:d:")) != -1) { //opcje
+            switch (choice) {
+                case 'n':
+                    if (atoi(optarg) <= 0) {
+                        puts("Invalid number of clients");
+                        exit(EXIT_FAILURE);
+                    } else
+                        clients = atoi(optarg);
+                    break;
+                case 's':
+                    if (atoi(optarg) <= 0) {
+                        puts("Invalid number of spots");
+                        exit(EXIT_FAILURE);
+                    } else
+                        spots = atoi(optarg);
+                    break;
+                case 'h':
+                    if (atoi(optarg) <= 0) {
+                        puts("Invalid time for haircutting");
+                        exit(EXIT_FAILURE);
+                    } else
+                        haircuttingTime = atoi(optarg);
+                    break;
+                case 'c':
+                    if (atoi(optarg) <= 0) {
+                        puts("Invalid time for clients");
+                        exit(EXIT_FAILURE);
+                    } else
+                        clientsTime = atoi(optarg);
+                    break;
+                case 'd':
+                    debug = true;
+                    break;
+                case ':':
+                    puts("Missing an operand");
+                    exit(EXIT_FAILURE);
+                default:
+                    puts("No such option");
+                    exit(EXIT_FAILURE);
+            }
+        }
+*/
+        printf("clients: %d\n", clients);
+        printf("spots: %d\n", spots);
+        printf("haircuttingTime: %d\n", haircuttingTime);
+        printf("clientsTime: %d\n", clientsTime);
+
+        iret2 = pthread_create(&haird, NULL, hairdresserRoom, NULL);
+        if (iret2) {
+            fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
             exit(EXIT_FAILURE);
         }
-        //sleep(3);
-    }
-    for(int i = 0; i < clients; i++){
-        pthread_join(threads[i], NULL);
-    }
-    pthread_join(haird, NULL);
+        int arg[clients];
+        for (int i = 0; i < clients; i++) {
+            arg[i] = i;
+            iret = pthread_create(&threads[i], NULL, newClient, (void *) &arg[i]);
+            //iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
+            if (iret) {
+                fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
+                exit(EXIT_FAILURE);
+            }
+            sleep(3);
+        }
+        for (int i = 0; i < clients; i++) {
+            pthread_join(threads[i], NULL);
+        }
+        pthread_join(haird, NULL);
 
-    sem_destroy(&client);
-    sem_destroy(&hairdresser);
-    pthread_mutex_destroy(&waitingRoom);
-    pthread_mutex_destroy(&armchair);
-    clean_queue();
-    exit(EXIT_SUCCESS);
+        sem_destroy(&client);
+        sem_destroy(&hairdresser);
+        pthread_mutex_destroy(&waitingRoom);
+        pthread_mutex_destroy(&armchair);
+        clean_queue();
+        exit(EXIT_SUCCESS);
+    }
 }
