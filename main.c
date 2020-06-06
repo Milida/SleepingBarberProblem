@@ -32,8 +32,6 @@ int resignedClients = 0; // liczba klientów, którzy zrezygnowali z wizyty
 int clients = 10;
 int actualClient = 0;
 int currentClient = -1;
-pthread_mutex_t printActualClient;
-pthread_mutex_t queueOperations;
 int passedClients = 0;
 
 void printQueues(){ //wypisywanie kolejek
@@ -106,40 +104,6 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
     }
 }
 
-// "drukarka" drukujaca na ekran po jednym znaku
-void screenPrinter(char c, int number) {
-    printf("%c %d\n",c, number);
-    // drukarka drukuje 4 znaki/s
-    usleep(250*1000); //w przypadku jak obecnie sleep tylko spowalnia
-}
-
-void *printString( void *ptr ) {
-    int* num = (int*) ptr;
-    int number = *num;
-    pthread_mutex_lock(&queueOperations);
-    add_to_waiting_queue(number);
-    printQueues();
-    pthread_mutex_unlock(&queueOperations);
-    pthread_mutex_lock(&printActualClient);
-    screenPrinter(actualClient + '0', number);
-    actualClient++;
-    pthread_mutex_unlock(&printActualClient);
-    pthread_mutex_lock(&queueOperations);
-    delete_from_waiting_queue();
-    printQueues();
-    pthread_mutex_unlock(&queueOperations);
-    /*char *message;
-    message = (char *) ptr;
-    int len = strlen(message);
-    int i = 0;
-
-    // drukowanie wiadomosci znak po znaku
-    for(i=0; i<len; i++) {
-        screenPrinter(message[i]);
-    }*/
-    pthread_exit(0);
-}
-
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     int nr_client = *(int *)num;
     pthread_mutex_lock(&waitingRoom); //blokujemy poczekalnię
@@ -166,9 +130,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
 void *hairdresserRoom(){
     sem_post(&hairdresser);
     while(passedClients != clients){
-        //tak jak sobie czytam, to tutaj sem_wait(&client) blokujemy klienta, czyli powinniśmy chyba dać później sem_post(&hairdresser)
-        // czyli wtedy fryzjer zaprasza czekającego klienta na fotel i wtedy dopiero dodajemy wolne miejsce w poczekalni i odblokowujemy poczekalnie
-        sem_wait(&client);//tutaj śpi, czyli czeka na klienta TODO tylko co jeśli klient przyjdzie do fryzjera jak fotel jest
+        sem_wait(&client);//tutaj śpi, czyli czeka na klienta
         pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
         freeSpots++;//
         delete_from_waiting_queue();
@@ -178,7 +140,6 @@ void *hairdresserRoom(){
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         //sleep(2);
-        //printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         pthread_mutex_unlock(&armchair); //odblokowanie fotela
         sem_post(&hairdresser);
     }
