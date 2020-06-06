@@ -161,9 +161,12 @@ void clean_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
 
 int main(int argc, char *argv[]) {
     int choice;
-    while((choice = getopt(argc,argv,":debug;")) != -1){ //checking and setting options from user's choice
+    static struct option long_options[] = {
+            {"debug", optional_argument, NULL, 'd'}
+    };
+    while((choice = getopt(argc,argv,)) != -1){ //checking and setting options from user's choice
         switch(choice){
-            case 'debug':
+            case 'd':
                 debug = true;
                 break;
             /*case ':':
