@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <semaphore.h>
 #include <stdbool.h>
+#include <getopt.h>
 
 typedef struct Queue {
     int client_number;
@@ -162,20 +163,19 @@ void clean_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
 int main(int argc, char *argv[]) {
     int choice;
     static struct option long_options[] = {
-            {"debug", optional_argument, NULL, 'd'}
+            {"debug", optional_argument, NULL, 'd'},
     };
-    while((choice = getopt_long(argc,argv,":d", long_options, NULL)) != -1){ //checking and setting options from user's choice
+    while((choice = getopt_long_only(argc,argv,"d;", long_options, NULL)) != -1){ //checking and setting options from user's choice
         switch(choice){
             case 'd':
                 debug = true;
                 break;
-            /*case ':':
-                puts("Missing an operand");
-                syslog(LOG_ERR, "Missing an operand");
-                exit(EXIT_FAILURE);*/
+                /*case ':':
+                    puts("Missing an operand");
+                    syslog(LOG_ERR, "Missing an operand");
+                    exit(EXIT_FAILURE);*/
             default:
                 puts("No such option");
-                syslog(LOG_ERR, "No such option");
                 exit(EXIT_FAILURE);
         }
     }
