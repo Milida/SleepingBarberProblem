@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
     static struct option long_options[] = {
             {"debug", optional_argument, NULL, 'd'}
     };
-    while((choice = getopt(argc,argv,)) != -1){ //checking and setting options from user's choice
+    while((choice = getopt_long(argc,argv,":d", long_options, NULL)) != -1){ //checking and setting options from user's choice
         switch(choice){
             case 'd':
                 debug = true;
