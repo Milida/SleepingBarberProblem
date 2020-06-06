@@ -125,7 +125,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
-        if(debug = true){ //TODO nie wiem czy nie trzeba na czas wypisywania dać jakiegoś mutexu, bo przy tym może też się pojawić błąd, może przesunęła bym za wypisanie odblokowanie poczekalni
+        if(debug == true){ //TODO nie wiem czy nie trzeba na czas wypisywania dać jakiegoś mutexu, bo przy tym może też się pojawić błąd, może przesunęła bym za wypisanie odblokowanie poczekalni
             printQueues();
         }
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
@@ -140,7 +140,7 @@ void *hairdresserRoom(){
         freeSpots++;//
         delete_from_waiting_queue();
         //obsługa pierwszego w kolejce wątku
-        if(debug = true) {
+        if(debug == true) {
             printQueues();
         }
         pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
@@ -185,7 +185,6 @@ int main(int argc, char *argv[]) {
                 exit(EXIT_FAILURE);
         }
     }
-    printf("Debug: %d", debug);
     sem_init(&client,0,0);
     sem_init(&hairdresser,0,0);
     // drukarka z mutexem
