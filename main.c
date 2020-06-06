@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <semaphore.h>
+#include <stdbool.h>
 
 typedef struct Queue {
     int client_number;
@@ -28,11 +29,10 @@ pthread_mutex_t armchair = PTHREAD_MUTEX_INITIALIZER;
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
 int resignedClients = 0; // liczba klientów, którzy zrezygnowali z wizyty
-int clients = 10;
+int clients = 40;
 int actualClient = 0;
-int currentClient = NULL;
-pthread_mutex_t printActualClient;
-pthread_mutex_t queueOperations;
+int currentClient = -1;
+int passedClients = 0;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -80,13 +80,13 @@ void add_to_resigned_queue(int number){ //dodawanie do kolejki klientów, którz
     Queue *new = (Queue*)malloc(sizeof(Queue));
     new->client_number = number;
     new->next_client = NULL;
-    if( last_waiting == NULL){ //pusta kolejka
+    if( last_resigned == NULL){ //pusta kolejka
         resigned = new; //ustawianie pierwszego elementu
     }
     else{
-        last_waiting->next_client = new; //dodawanie klienta do kolejki
+        last_resigned->next_client = new; //dodawanie klienta do kolejki
     }
-    last_waiting = new; //ustawienie ostatniego elementu kolejki
+    last_resigned = new; //ustawienie ostatniego elementu kolejki
     resignedClients++;
 }
 
@@ -104,105 +104,158 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
     }
 }
 
-// "drukarka" drukujaca na ekran po jednym znaku
-void screenPrinter(char c, int number) {
-    printf("%c %d\n",c, number);
-    // drukarka drukuje 4 znaki/s
-    usleep(250*1000); //w przypadku jak obecnie sleep tylko spowalnia
-}
-
-void *printString( void *ptr ) {
-    int* num = (int*) ptr;
-    int number = *num;
-    pthread_mutex_lock(&queueOperations);
-    add_to_waiting_queue(number);
-    printQueues();
-    pthread_mutex_unlock(&queueOperations);
-    pthread_mutex_lock(&printActualClient);
-    screenPrinter(actualClient + '0', number);
-    actualClient++;
-    pthread_mutex_unlock(&printActualClient);
-    pthread_mutex_lock(&queueOperations);
-    delete_from_waiting_queue();
-    printQueues();
-    pthread_mutex_unlock(&queueOperations);
-    /*char *message;
-    message = (char *) ptr;
-    int len = strlen(message);
-    int i = 0;
-
-    // drukowanie wiadomosci znak po znaku
-    for(i=0; i<len; i++) {
-        screenPrinter(message[i]);
-    }*/
-    pthread_exit(0);
-}
-
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     int nr_client = *(int *)num;
     pthread_mutex_lock(&waitingRoom); //blokujemy poczekalnię
 
     if(freeSpots){ //jeśli są wolnej miejsca
         add_to_waiting_queue(nr_client); //dodajemy klienta do klientów czekających w poczekalni
-        sem_post(&client); //daje sygnał fryzjerowi, że ktoś czeka w poczekalni
+        printQueues();
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
+        sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
-        pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
         currentClient = nr_client;
-        printf("Res:%d WRomm: %d/&d [in: %d]", resigned, spots - freeSpots, spots,  currentClient);
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
     }
     else{
+        passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
-        printf("Res:%d WRomm: %d/&d [in: %d]", resigned, spots - freeSpots, spots,  currentClient);
+        printQueues();
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
     }
+    pthread_exit(0);
 }
 
 void *hairdresserRoom(){
-    //tak jak sobie czytam, to tutaj sem_wait(&client) blokujemy klienta, czyli powinniśmy chyba dać później sem_post(&hairdresser)
-    // czyli wtedy fryzjer zaprasza czekającego klienta na fotel i wtedy dopiero dodajemy wolne miejsce w poczekalni i odblokowujemy poczekalnie
-    sem_wait(&client);//tutaj śpi, czyli czeka na klienta TODO tylko co jeśli klient przyjdzie do fryzjera jak fotel jest zajęty
-    pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
-    freeSpots++; //
-    //obsługa pierwszego w kolejce wątku
-    pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-    printf("Res:%d WRomm: %d/&d [in: %d]", resigned, spots - freeSpots, spots,  currentClient);
-    pthread_mutex_unlock(&armchair); //odblokowanie fotela
+    sem_post(&hairdresser);
+    while(passedClients != clients){
+        sem_wait(&client);//tutaj śpi, czyli czeka na klienta
+        pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
+        freeSpots++;//
+        delete_from_waiting_queue();
+        //obsługa pierwszego w kolejce wątku
+        printQueues();
+        pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
+        passedClients++;
+        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
+        sleep(5);
+        pthread_mutex_unlock(&armchair); //odblokowanie fotela
+        sem_post(&hairdresser);
+    }
 }
+
+void clean_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
+    if(resigned == NULL){
+        return;
+    }
+    while(resigned->next_client != NULL){ //jeśli był sam to zwalniamy pamięć
+        Queue* x = resigned;
+        resigned = resigned->next_client;
+        free(x);
+    }
+    free(resigned);
+}
+
 
 int main(int argc, char *argv[]) {
     //sprawdzanie jakie opcje podał użytkownik (znowu getopt jak poprzednio tylko parametry inne)
 
-    sem_init(&client,0,0);
-    sem_init(&hairdresser,0,0);
+    sem_init(&client, 0, 0);
+    sem_init(&hairdresser, 0, 0);
     // drukarka z mutexem
     pthread_t threads[clients];
     pthread_t haird;
     int iret;
     int iret2;
-    //iret2 = pthread_create(&haird, NULL, hairdresserRoom , NULL);
-   // if (iret2) {
-    //    fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
-    //    exit(EXIT_FAILURE);
-   // }
-    int arg[clients];
-    for(int i = 0; i < clients; i++) {
-        arg[i] = i;
-        //iret = pthread_create(&threads[i], NULL, newClient, &arg[i]);
-        iret = pthread_create(&threads[i], NULL, printString, &arg[i]);
-        if (iret) {
-            fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
+
+    int haircuttingTime;
+    int clientsTime;
+    bool debug = false;
+    int choice;
+
+
+    if (argc <= 2) {
+        puts("Too few arguments");
+        exit(EXIT_FAILURE);
+    }
+    if (argc > 10) {
+        puts("Too many arguments");
+        exit(EXIT_FAILURE);
+
+        while ((choice = getopt(argc, argv, ":n:s:h:c:d:")) != -1) { //opcje
+            switch (choice) {
+                case 'n':
+                    if (atoi(optarg) <= 0) {
+                        puts("Invalid number of clients");
+                        exit(EXIT_FAILURE);
+                    } else
+                        clients = atoi(optarg);
+                    break;
+                case 's':
+                    if (atoi(optarg) <= 0) {
+                        puts("Invalid number of spots");
+                        exit(EXIT_FAILURE);
+                    } else
+                        spots = atoi(optarg);
+                    break;
+                case 'h':
+                    if (atoi(optarg) <= 0) {
+                        puts("Invalid time for haircutting");
+                        exit(EXIT_FAILURE);
+                    } else
+                        haircuttingTime = atoi(optarg);
+                    break;
+                case 'c':
+                    if (atoi(optarg) <= 0) {
+                        puts("Invalid time for clients");
+                        exit(EXIT_FAILURE);
+                    } else
+                        clientsTime = atoi(optarg);
+                    break;
+                case 'd':
+                    debug = true;
+                    break;
+                case ':':
+                    puts("Missing an operand");
+                    exit(EXIT_FAILURE);
+                default:
+                    puts("No such option");
+                    exit(EXIT_FAILURE);
+            }
+        }
+
+        printf("clients: %d\n", clients);
+        printf("spots: %d\n", spots);
+        printf("haircuttingTime: %d\n", haircuttingTime);
+        printf("clientsTime: %d\n", clientsTime);
+
+        iret2 = pthread_create(&haird, NULL, hairdresserRoom, NULL);
+        if (iret2) {
+            fprintf(stderr, "Error - pthread_create() return code: %d\n", iret2);
             exit(EXIT_FAILURE);
         }
-    }
-    for(int i = 0; i < clients; i++){
-        pthread_join(threads[i], NULL);
-    }
-    //pthread_join(haird, NULL);
+        int arg[clients];
+        for (int i = 0; i < clients; i++) {
+            arg[i] = i;
+            iret = pthread_create(&threads[i], NULL, newClient, (void *) &arg[i]);
+            //iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
+            if (iret) {
+                fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
+                exit(EXIT_FAILURE);
+            }
+            sleep(3);
+        }
+        for (int i = 0; i < clients; i++) {
+            pthread_join(threads[i], NULL);
+        }
+        pthread_join(haird, NULL);
 
-    sem_destroy(&client);
-    sem_destroy(&hairdresser);
-    pthread_mutex_destroy(&waitingRoom);
-    pthread_mutex_destroy(&armchair);
-    exit(EXIT_SUCCESS);
+        sem_destroy(&client);
+        sem_destroy(&hairdresser);
+        pthread_mutex_destroy(&waitingRoom);
+        pthread_mutex_destroy(&armchair);
+        clean_queue();
+        exit(EXIT_SUCCESS);
+    }
 }
