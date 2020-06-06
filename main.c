@@ -33,6 +33,7 @@ int clients = 10;
 int actualClient = 0;
 int currentClient = -1;
 int passedClients = 0;
+bool debug = false;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -159,8 +160,23 @@ void clean_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
 
 
 int main(int argc, char *argv[]) {
-    //sprawdzanie jakie opcje podał użytkownik (znowu getopt jak poprzednio tylko parametry inne)
-
+    int choice;
+    while((choice = getopt(argc,argv,":debug;")) != -1){ //checking and setting options from user's choice
+        switch(choice){
+            case 'debug':
+                debug = true;
+                break;
+            /*case ':':
+                puts("Missing an operand");
+                syslog(LOG_ERR, "Missing an operand");
+                exit(EXIT_FAILURE);*/
+            default:
+                puts("No such option");
+                syslog(LOG_ERR, "No such option");
+                exit(EXIT_FAILURE);
+        }
+    }
+    printf("Debug: %d", debug);
     sem_init(&client,0,0);
     sem_init(&hairdresser,0,0);
     // drukarka z mutexem
