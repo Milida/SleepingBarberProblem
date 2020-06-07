@@ -36,8 +36,8 @@ int actualClient = 0;
 int currentClient = -1;
 int passedClients = 0;
 bool debug = false;
-int haircuttingTime = 30;
-int clientsTime = 20;
+int haircuttingTime = 3;
+int clientsTime = 2;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -112,7 +112,7 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
 
 void wait_random_time(int max){
     int time = random() % max;
-    usleep(time * 100);
+    sleep(time);
 }
 
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
