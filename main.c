@@ -121,6 +121,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
 
     if(freeSpots){ //jeśli są wolnej miejsca
         add_to_waiting_queue(nr_client); //dodajemy klienta do klientów czekających w poczekalni
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         if(debug == true) {
             printQueues();
         }
@@ -128,16 +129,17 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         currentClient = nr_client;
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         sem_post(&currClient);
     }
     else{
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         if(debug == true){ //TODO nie wiem czy nie trzeba na czas wypisywania dać jakiegoś mutexu, bo przy tym może też się pojawić błąd, może przesunęła bym za wypisanie odblokowanie poczekalni
             printQueues();
         }
-        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
     }
     pthread_exit(0);
 }
@@ -149,7 +151,6 @@ void *hairdresserRoom(){
         pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
         delete_from_waiting_queue();
         sem_wait(&currClient);
-        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         //obsługa pierwszego w kolejce wątku
         if(debug == true) {
             printQueues();
