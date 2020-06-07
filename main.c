@@ -112,7 +112,7 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
 
 void wait_random_time(int max){
     int time = rand() % (max + 1);
-    sleep(time);
+    usleep(time * 1000);
 }
 
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
@@ -160,6 +160,7 @@ void *hairdresserRoom(){
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         wait_random_time(haircuttingTime);
         pthread_mutex_unlock(&armchair); //odblokowanie fotela
+        currentClient = -1;
         sem_post(&hairdresser);
     }
 }
