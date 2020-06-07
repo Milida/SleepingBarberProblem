@@ -36,6 +36,8 @@ int actualClient = 0;
 int currentClient = -1;
 int passedClients = 0;
 bool debug = false;
+int haircuttingTime =3;
+int clientsTime = 2;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
