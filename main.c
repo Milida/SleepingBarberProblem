@@ -36,8 +36,8 @@ int actualClient = 0;
 int currentClient = -1;
 int passedClients = 0;
 bool debug = false;
-int haircuttingTime =3;
-int clientsTime = 2;
+int haircuttingTime = 30;
+int clientsTime = 20;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -110,6 +110,11 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
     freeSpots++;
 }
 
+void wait_random_time(int max){
+    int time = random() % max;
+    usleep(time * 100);
+}
+
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     int nr_client = *(int *)num;
     pthread_mutex_lock(&waitingRoom); //blokujemy poczekalnię
@@ -152,7 +157,7 @@ void *hairdresserRoom(){
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        sleep(3);
+        wait_random_time(haircuttingTime);
         pthread_mutex_unlock(&armchair); //odblokowanie fotela
         sem_post(&hairdresser);
     }
@@ -170,26 +175,8 @@ void clean_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
     free(resigned);
 }
 
-
 int main(int argc, char *argv[]) {
-    int choice;
-    /*static struct option long_options[] = {
-            {"debug", optional_argument, NULL, 'd'},
-    };
-    while((choice = getopt_long_only(argc,argv,"d;", long_options, NULL)) != -1){ //checking and setting options from user's choice
-        switch(choice){
-            case 'd':
-                debug = true;
-                break;
-                /*case ':':
-                    puts("Missing an operand");
-                    syslog(LOG_ERR, "Missing an operand");
-                    exit(EXIT_FAILURE);*/
-          /*  default:
-                puts("No such option");
-                exit(EXIT_FAILURE);
-        }
-    }*/
+    srand(time(NULL));
     int choice;
     static struct option long_options[] = {
             {"debug", optional_argument, NULL, 'd'},
@@ -260,6 +247,7 @@ int main(int argc, char *argv[]) {
     }
     int arg[clients];
     for(int i = 0; i < clients; i++) {
+        wait_random_time(clientsTime);
         arg[i] = i;
         iret = pthread_create(&threads[i], NULL, newClient, (void*)&arg[i]);
         //iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
@@ -267,7 +255,6 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
         }
-        sleep(2);
     }
     for(int i = 0; i < clients; i++){
         pthread_join(threads[i], NULL);
