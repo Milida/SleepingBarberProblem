@@ -24,6 +24,7 @@ Queue *last_resigned = NULL; //nie wiadomo czy będzie potrzebne
 
 sem_t client;
 sem_t hairdresser;
+sem_t currClient;
 pthread_mutex_t waitingRoom = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t armchair = PTHREAD_MUTEX_INITIALIZER;
 
@@ -120,7 +121,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         currentClient = nr_client;
-        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
+        sem_post(&currClient);
     }
     else{
         passedClients++;
@@ -138,16 +139,18 @@ void *hairdresserRoom(){
     sem_post(&hairdresser);
     while(passedClients != clients){
         sem_wait(&client);//tutaj śpi, czyli czeka na klienta
+        pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
         delete_from_waiting_queue();
+        sem_wait(&currClient);
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         //obsługa pierwszego w kolejce wątku
         if(debug == true) {
             printQueues();
         }
-        pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        //sleep(2);
+        sleep(3);
         pthread_mutex_unlock(&armchair); //odblokowanie fotela
         sem_post(&hairdresser);
     }
@@ -187,6 +190,7 @@ int main(int argc, char *argv[]) {
     }
     sem_init(&client,0,0);
     sem_init(&hairdresser,0,0);
+    sem_init(&currClient,0,0);
     // drukarka z mutexem
     pthread_t threads[clients];
     pthread_t haird;
@@ -206,7 +210,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
         }
-        //sleep(3);
+        sleep(2);
     }
     for(int i = 0; i < clients; i++){
         pthread_join(threads[i], NULL);
