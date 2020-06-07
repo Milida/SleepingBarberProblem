@@ -111,7 +111,7 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
 }
 
 void wait_random_time(int max){
-    int time = random() % max;
+    int time = rand() % (max + 1);
     sleep(time);
 }
 
@@ -179,13 +179,13 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
     int choice;
     static struct option long_options[] = {
-            {"debug", optional_argument, NULL, 'd'},
-            {"clients", optional_argument, NULL, 'n'},
-            {"spots", optional_argument, NULL, 's'},
-            {"haircuttingTime", optional_argument, NULL, 'h'},
-            {"clientsTime", optional_argument, NULL, 'c'},
+            {"debug", no_argument, NULL, 'd'},
+            {"clients", required_argument, NULL, 'n'},
+            {"spots", required_argument, NULL, 's'},
+            {"haircuttingTime", required_argument, NULL, 'h'},
+            {"clientsTime", required_argument, NULL, 'c'},
     };
-    while((choice = getopt_long_only(argc,argv,"d:n:s:h:c:", long_options, NULL)) != -1){ //checking and setting options from user's choice
+    while((choice = getopt_long_only(argc,argv,":dnshc", long_options, NULL)) != -1){ //checking and setting options from user's choice
         switch(choice){
             case 'd':
                 debug = true;
