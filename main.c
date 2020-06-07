@@ -128,7 +128,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
-        currentClient = nr_client;
+        currentClient = nr_client; //tuaj jest mutex we fryzjerze! i dlatego jeśli założy się drugi to nie działa!!!
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         sem_post(&currClient);
     }
@@ -136,10 +136,10 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         passedClients++;
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
-        if(debug == true){ //TODO nie wiem czy nie trzeba na czas wypisywania dać jakiegoś mutexu, bo przy tym może też się pojawić błąd, może przesunęła bym za wypisanie odblokowanie poczekalni
+        if(debug == true){
             printQueues();
         }
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
     }
     pthread_exit(0);
 }
