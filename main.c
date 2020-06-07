@@ -171,7 +171,7 @@ void clean_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
 
 int main(int argc, char *argv[]) {
     int choice;
-    static struct option long_options[] = {
+    /*static struct option long_options[] = {
             {"debug", optional_argument, NULL, 'd'},
     };
     while((choice = getopt_long_only(argc,argv,"d;", long_options, NULL)) != -1){ //checking and setting options from user's choice
@@ -183,11 +183,66 @@ int main(int argc, char *argv[]) {
                     puts("Missing an operand");
                     syslog(LOG_ERR, "Missing an operand");
                     exit(EXIT_FAILURE);*/
+          /*  default:
+                puts("No such option");
+                exit(EXIT_FAILURE);
+        }
+    }*/
+    int choice;
+    static struct option long_options[] = {
+            {"debug", optional_argument, NULL, 'd'},
+            {"clients", optional_argument, NULL, 'n'},
+            {"spots", optional_argument, NULL, 's'},
+            {"haircuttingTime", optional_argument, NULL, 'h'},
+            {"clientsTime", optional_argument, NULL, 'c'},
+    };
+    while((choice = getopt_long_only(argc,argv,"d:n:s:h:c:", long_options, NULL)) != -1){ //checking and setting options from user's choice
+        switch(choice){
+            case 'd':
+                debug = true;
+                break;
+                /*case ':':
+                    puts("Missing an operand");
+                    syslog(LOG_ERR, "Missing an operand");
+                    exit(EXIT_FAILURE);*/
+            case 'n':
+                if (atoi(optarg) <= 0) {
+                    puts("Invalid number of clients");
+                    exit(EXIT_FAILURE);
+                } else
+                    clients = atoi(optarg);
+                break;
+            case 's':
+                if (atoi(optarg) <= 0) {
+                    puts("Invalid number of spots");
+                    exit(EXIT_FAILURE);
+                } else
+                    spots = atoi(optarg);
+                break;
+            case 'h':
+                if (atoi(optarg) <= 0) {
+                    puts("Invalid time for haircutting");
+                    exit(EXIT_FAILURE);
+                } else
+                    haircuttingTime = atoi(optarg);
+                break;
+            case 'c':
+                if (atoi(optarg) <= 0) {
+                    puts("Invalid time for clients");
+                    exit(EXIT_FAILURE);
+                } else
+                    clientsTime = atoi(optarg);
+                break;
             default:
                 puts("No such option");
                 exit(EXIT_FAILURE);
         }
     }
+    printf("clients: %d\n", clients);
+    printf("spots: %d\n", spots);
+    printf("haircuttingTime: %d\n", haircuttingTime);
+    printf("clientsTime: %d\n", clientsTime);
+
     sem_init(&client,0,0);
     sem_init(&hairdresser,0,0);
     sem_init(&currClient,0,0);
