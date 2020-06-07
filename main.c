@@ -104,6 +104,7 @@ void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczeku
         waiting = first->next_client;
         free(first);
     }
+    freeSpots++;
 }
 
 void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
@@ -137,7 +138,6 @@ void *hairdresserRoom(){
     sem_post(&hairdresser);
     while(passedClients != clients){
         sem_wait(&client);//tutaj śpi, czyli czeka na klienta
-        freeSpots++;//
         delete_from_waiting_queue();
         //obsługa pierwszego w kolejce wątku
         if(debug == true) {
