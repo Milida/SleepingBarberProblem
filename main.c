@@ -134,8 +134,8 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     }
     else{
         passedClients++;
-        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
+        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         if(debug == true){ //TODO nie wiem czy nie trzeba na czas wypisywania dać jakiegoś mutexu, bo przy tym może też się pojawić błąd, może przesunęła bym za wypisanie odblokowanie poczekalni
             printQueues();
@@ -265,6 +265,7 @@ int main(int argc, char *argv[]) {
 
     sem_destroy(&client);
     sem_destroy(&hairdresser);
+    sem_destroy(&currClient);
     pthread_mutex_destroy(&waitingRoom);
     pthread_mutex_destroy(&armchair);
     clean_queue();
