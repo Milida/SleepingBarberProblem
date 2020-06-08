@@ -129,7 +129,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
             printQueues();
         }
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni
+        pthread_cond_signal(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         currentClient = nr_client; //tuaj jest mutex we fryzjerze! i dlatego jeśli założy się drugi to nie działa!!!
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
