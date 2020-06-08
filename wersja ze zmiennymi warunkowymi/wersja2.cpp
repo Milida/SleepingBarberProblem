@@ -25,6 +25,9 @@ Queue *last_resigned = NULL; //nie wiadomo czy będzie potrzebne
 sem_t client;
 sem_t hairdresser;
 sem_t currClient;
+pthread_cond_t client_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t hairdresser_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t currClient_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t waitingRoom = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t armchair = PTHREAD_MUTEX_INITIALIZER;
 
@@ -126,7 +129,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
             printQueues();
         }
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni //TODO nie wiem czy tego może nie dać przed odblokowaniem mutexu
+        sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         currentClient = nr_client; //tuaj jest mutex we fryzjerze! i dlatego jeśli założy się drugi to nie działa!!!
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
@@ -147,8 +150,9 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
 void *hairdresserRoom(){
     sem_post(&hairdresser);
     while(passedClients != clients){
-        sem_wait(&client);//tutaj śpi, czyli czeka na klienta
+        //sem_wait(&client);//tutaj śpi, czyli czeka na klienta
         pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
+        pthread_cond_wait(&client_cond, &waitingRoom);
         delete_from_waiting_queue();
         sem_wait(&currClient);
         //obsługa pierwszego w kolejce wątku
@@ -266,6 +270,9 @@ int main(int argc, char *argv[]) {
     sem_destroy(&client);
     sem_destroy(&hairdresser);
     sem_destroy(&currClient);
+    pthread_cond_destroy(&client_cond);
+    pthread_cond_destroy(&hairdresser_cond);
+    pthread_cond_destroy(&currClient_cond);
     pthread_mutex_destroy(&waitingRoom);
     pthread_mutex_destroy(&armchair);
     clean_queue();
