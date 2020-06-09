@@ -150,12 +150,12 @@ void *hairdresserRoom(){
         sem_wait(&client);//tutaj śpi, czyli czeka na klienta
         pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
         delete_from_waiting_queue();
+        sem_post(&hairdresser);
         sem_wait(&currClient);
         //obsługa pierwszego w kolejce wątku
         if(debug) {
             printQueues();
         }
-        sem_post(&hairdresser);
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
