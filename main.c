@@ -125,8 +125,8 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         if(debug) {
             printQueues();
         }
-        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni //TODO nie wiem czy tego może nie dać przed odblokowaniem mutexu
+        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         currentClient = nr_client; //tuaj jest mutex we fryzjerze! i dlatego jeśli założy się drugi to nie działa!!!
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
@@ -145,7 +145,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
 }
 
 void *hairdresserRoom(){
-    sem_post(&hairdresser);
+    //sem_post(&hairdresser);
     while(passedClients != clients){
         sem_wait(&client);//tutaj śpi, czyli czeka na klienta
         pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
@@ -155,15 +155,15 @@ void *hairdresserRoom(){
         if(debug) {
             printQueues();
         }
+        sem_post(&hairdresser);
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         wait_random_time(haircuttingTime);
         pthread_mutex_unlock(&armchair); //odblokowanie fotela
-        if(freeSpots == spots){
+        /*if(freeSpots == spots){
             currentClient = -1;
-        }
-        sem_post(&hairdresser);
+        }*/ //zobaczymy co z tym wyjdzie
     }
 }
 
