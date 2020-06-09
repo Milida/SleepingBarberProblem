@@ -128,8 +128,8 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         if(debug) {
             printQueues();
         }
+        sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni //TODO nie wiem czy tego może nie dać przed odblokowaniem mutexu
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        pthread_cond_signal(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni
         sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         currentClient = nr_client; //tuaj jest mutex we fryzjerze! i dlatego jeśli założy się drugi to nie działa!!!
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
@@ -138,24 +138,25 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
     else{
         passedClients++;
         add_to_resigned_queue(nr_client); //jeśli brak wolnych miejsc to dodajemy go do kolejki klientów którzy zrezygnowali
-        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
+        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         if(debug){
             printQueues();
         }
-        printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
+        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
     }
     pthread_exit(0);
 }
 
 void *hairdresserRoom(){
-    sem_post(&hairdresser);
+    //sem_post(&hairdresser);
     while(passedClients != clients){
-        //sem_wait(&client);//tutaj śpi, czyli czeka na klienta
+        sem_wait(&client);//tutaj śpi, czyli czeka na klienta
         pthread_mutex_lock(&waitingRoom);//blokujemy poczekalnię, bo sprawdza czy jest klient
-        pthread_cond_wait(&client_cond, &waitingRoom);
         delete_from_waiting_queue();
-        sem_wait(&currClient);
         //obsługa pierwszego w kolejce wątku
+        sem_post(&hairdresser);
+        //pthread_cond_signal(&hairdresserCond);
+        sem_wait(&currClient);
         if(debug) {
             printQueues();
         }
@@ -165,7 +166,9 @@ void *hairdresserRoom(){
         wait_random_time(haircuttingTime);
         pthread_mutex_unlock(&armchair); //odblokowanie fotela
         currentClient = -1;
-        sem_post(&hairdresser);
+        /*if(freeSpots == spots){
+            currentClient = -1;
+        }*/ //zobaczymy co z tym wyjdzie
     }
 }
 
@@ -241,6 +244,9 @@ int main(int argc, char *argv[]) {
     sem_init(&client,0,0);
     sem_init(&hairdresser,0,0);
     sem_init(&currClient,0,0);
+    pthread_cond_init(&client_cond, NULL);
+    pthread_cond_init(&hairdresser_cond, NULL);
+    pthread_cond_init(&currClient_cond, NULL);
     // drukarka z mutexem
     pthread_t threads[clients];
     pthread_t haird;
