@@ -131,15 +131,10 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         }
         //sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni //TODO nie wiem czy tego może nie dać przed odblokowaniem mutexu
         //pthread_mutex_lock(&hairdresser_mut);
-        pthread_cond_signal(&client_cond);
+        pthread_cond_signal(&hairdresser_cond);
         //pthread_mutex_unlock(&hairdresser_mut);
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        pthread_mutex_lock(&hairdresser_mut);
-        if(currentClient != -1){
-            pthread_cond_wait(&hairdresser_cond, &hairdresser_mut);
-        }
-        pthread_mutex_unlock(&hairdresser_mut);
-        //sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
+        sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         currentClient = nr_client; //tuaj jest mutex we fryzjerze! i dlatego jeśli założy się drugi to nie działa!!!
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         sem_post(&currClient);
@@ -163,15 +158,11 @@ void *hairdresserRoom(){
         pthread_mutex_lock(&waitingRoom);
         //sem_wait(&client);//tutaj śpi, czyli czeka na klienta
         if(freeSpots == spots)	{
-            currentClient = -1;
-            pthread_cond_wait(&client_cond, &waitingRoom); //czeka na klienta
+            pthread_cond_wait(&hairdresser_cond, &waitingRoom);
         }
         delete_from_waiting_queue();
         //obsługa pierwszego w kolejce wątku
-        pthread_mutex_lock(&hairdresser_mut);
-        //sem_post(&hairdresser);
-        pthread_cond_signal(&hairdresser_cond);
-        pthread_mutex_unlock(&hairdresser_mut);
+        sem_post(&hairdresser);
         //pthread_cond_signal(&hairdresserCond);
         sem_wait(&currClient);
         if(debug) {
@@ -182,7 +173,7 @@ void *hairdresserRoom(){
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         wait_random_time(haircuttingTime);
         pthread_mutex_unlock(&armchair); //odblokowanie fotela
-        //currentClient = -1;
+        currentClient = -1;
 
         /*if(freeSpots == spots){
             currentClient = -1;
