@@ -199,10 +199,6 @@ int main(int argc, char *argv[]) {
             case 'd':
                 debug = true;
                 break;
-                /*case ':':
-                    puts("Missing an operand");
-                    syslog(LOG_ERR, "Missing an operand");
-                    exit(EXIT_FAILURE);*/
             case 'n':
                 if (atoi(optarg) <= 0) {
                     puts("Invalid number of clients");
@@ -243,8 +239,6 @@ int main(int argc, char *argv[]) {
 
     sem_init(&client,0,0);
     sem_init(&hairdresser,0,0);
-    sem_init(&currClient,0,0);
-    // drukarka z mutexem
     pthread_t threads[clients];
     pthread_t haird;
     int iret;
@@ -259,7 +253,6 @@ int main(int argc, char *argv[]) {
         wait_random_time(clientsTime);
         arg[i] = i;
         iret = pthread_create(&threads[i], NULL, newClient, (void*)&arg[i]);
-        //iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
         if (iret) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
