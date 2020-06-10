@@ -99,17 +99,29 @@ void add_to_resigned_queue(int number){ //dodawanie do kolejki klientów, którz
     resignedClients++;
 }
 
-void delete_from_waiting_queue(){ //usuwanie pierwszego klienta z kolejki oczekujących
-    if(waiting->next_client == NULL){ //jeśli był sam to zwalniamy pamięć
+void delete_from_waiting_queue(int cNumber){ //usuwanie pierwszego klienta z kolejki oczekujących
+    if((waiting->next_client == NULL) && (waiting->client_number == cNumber)){
         Queue* x = waiting;
         free(x);
         waiting = NULL;
         last_waiting = NULL;
     }
-    else{ //jeśli nie to usuwamy pierwszego klienta z kolejki
+    else if(waiting->client_number == cNumber){
         Queue* first = waiting;
         waiting = first->next_client;
         free(first);
+    }
+    else{
+        Queue* x = waiting;
+        while(x->next_client->client_number != cNumber){
+            x = x->next_client;
+        }
+        Queue* tmp = x->next_client;
+        x->next_client = tmp->next_client;
+        if(tmp = last_waiting){
+            last_waiting = x;
+        }
+        free(tmp);
     }
     freeSpots++;
 }
@@ -141,6 +153,7 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         pthread_mutex_unlock(&hairdresser_mut);
         //sem_wait(&hairdresser); //czeka na zwolnienie się fryzjera ?
         currentClient = nr_client; //tuaj jest mutex we fryzjerze! i dlatego jeśli założy się drugi to nie działa!!!
+        delete_from_waiting_queue(currentClient);
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         sem_post(&currClient);
     }
@@ -166,7 +179,6 @@ void *hairdresserRoom(){
             currentClient = -1;
             pthread_cond_wait(&client_cond, &waitingRoom); //czeka na klienta
         }
-        delete_from_waiting_queue();
         //obsługa pierwszego w kolejce wątku
         pthread_mutex_lock(&hairdresser_mut);
         //sem_post(&hairdresser);
