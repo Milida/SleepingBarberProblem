@@ -22,9 +22,6 @@ Queue *resigned = NULL; //Lista klientów, którzy zrezygnowali z usługi
 Queue *last_waiting = NULL; //trzyma ostatnią osobę która czeka, żeby łatwo dodać na koniec kolejki
 Queue *last_resigned = NULL; //trzyma ostatniego klienta, który zrezygnował, żeby łatwo dodać na koniec kolejki
 
-sem_t client;
-sem_t hairdresser;
-
 pthread_cond_t client_cond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t hairdresser_cond = PTHREAD_COND_INITIALIZER;
 
@@ -251,8 +248,6 @@ int main(int argc, char *argv[]) {
     printf("haircuttingTime: %d\n", haircuttingTime);
     printf("clientsTime: %d\n", clientsTime);
 
-    sem_init(&client,0,0);
-    sem_init(&hairdresser,0,0);
     pthread_t threads[clients];
     pthread_t haird;
     int iret;
@@ -277,8 +272,6 @@ int main(int argc, char *argv[]) {
     }
     pthread_join(haird, NULL);
 
-    sem_destroy(&client);
-    sem_destroy(&hairdresser);
     pthread_cond_destroy(&client_cond);
     pthread_cond_destroy(&hairdresser_cond);
     pthread_mutex_destroy(&waitingRoom);
