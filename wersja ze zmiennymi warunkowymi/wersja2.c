@@ -42,6 +42,7 @@ int passedClients = 0;
 bool debug = false;
 int haircuttingTime = 3;
 int clientsTime = 2;
+int currIn = -1;
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -130,16 +131,17 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
             printQueues();
         }
         //sem_post(&client);//daje sygnał fryzjerowi, że ktoś czeka w poczekalni //TODO nie wiem czy tego może nie dać przed odblokowaniem mutexu
-        //pthread_mutex_lock(&hairdresser_mut);
         pthread_cond_signal(&client_cond);
         //pthread_mutex_unlock(&hairdresser_mut);
-        //pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
-        //pthread_mutex_lock(&waitingRoom); //tu prawdopodobnie powinien być inny mutex?
-        while(nr_client != currentClient){
-            pthread_cond_wait(&hairdresser_cond, &waitingRoom);
+        pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
+        pthread_mutex_lock(&hairdresser_mut);
+        //pthread_mutex_lock(&hairdresser_mut); //tu prawdopodobnie powinien być inny mutex?
+        while(nr_client != currIn){
+            //printf("Czeka %d\n", nr_client);
+            pthread_cond_wait(&hairdresser_cond, &hairdresser_mut);
         }
-        //printf("Przeszedł %d\n\n",nr_client);
-        pthread_mutex_unlock(&waitingRoom);
+        printf("Przeszedł %d\n\n",nr_client);
+        pthread_mutex_unlock(&hairdresser_mut);
     }
     else{
         passedClients++;
@@ -163,16 +165,20 @@ void *hairdresserRoom(){
             currentClient = -1;
             pthread_cond_wait(&client_cond, &waitingRoom); //czeka na klienta
         }
-        //pthread_mutex_lock(&hairdresser_mut);
         currentClient = waiting->client_number;
-        pthread_cond_broadcast(&hairdresser_cond);
-        //pthread_mutex_unlock(&hairdresser_mut);
-        pthread_mutex_unlock(&waitingRoom);
+        //pthread_mutex_unlock(&waitingRoom);
+        pthread_mutex_unlock(&hairdresser_mut);
         delete_from_waiting_queue(currentClient);
         printf("Res:%d WRomm: %d/%d [in: %d]\n", resignedClients, spots - freeSpots, spots,  currentClient);
         if(debug) {
             printQueues();
         }
+        pthread_mutex_lock(&hairdresser_mut);
+        currIn = currentClient;
+        //pthread_mutex_unlock(&hairdresser_mut);
+        //pthread_mutex_unlock(&waitingRoom);
+        pthread_cond_broadcast(&hairdresser_cond);
+        pthread_mutex_unlock(&hairdresser_mut);
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
@@ -208,10 +214,6 @@ int main(int argc, char *argv[]) {
             case 'd':
                 debug = true;
                 break;
-                /*case ':':
-                    puts("Missing an operand");
-                    syslog(LOG_ERR, "Missing an operand");
-                    exit(EXIT_FAILURE);*/
             case 'n':
                 if (atoi(optarg) <= 0) {
                     puts("Invalid number of clients");
@@ -225,6 +227,7 @@ int main(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 } else
                     spots = atoi(optarg);
+                freeSpots = atoi(optarg);
                 break;
             case 'h':
                 if (atoi(optarg) <= 0) {
@@ -267,7 +270,6 @@ int main(int argc, char *argv[]) {
         wait_random_time(clientsTime);
         arg[i] = i;
         iret = pthread_create(&threads[i], NULL, newClient, (void*)&arg[i]);
-        //iret = pthread_create(&threads[i], NULL, printString, (void*)&arg[i]);
         if (iret) {
             fprintf(stderr, "Error - pthread_create() return code: %d\n", iret);
             exit(EXIT_FAILURE);
