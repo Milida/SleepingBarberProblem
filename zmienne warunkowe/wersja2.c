@@ -147,8 +147,8 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         }
         printf("Wszedł: %d\n\n", nr_client);
         pthread_mutex_unlock(&hairdresser_mut);//odblokowanie mutexu zablokowanego przez wchodzący do fryzjera wątek
-        pthread_mutex_lock(&currClient_mut);
-        pthread_cond_signal(&currClient_cond);
+        pthread_mutex_lock(&currClient_mut); //zablokowamie mutexu  ustawiającego konkretnego klienta
+        pthread_cond_signal(&currClient_cond); //wysłanie sygnału że klient wyszedł z ticket locka i jest gotowy do zajęcia fotela
         pthread_mutex_unlock(&currClient_mut);
     }
     else{
@@ -178,11 +178,11 @@ void *hairdresserRoom(){
         }
         pthread_mutex_lock(&hairdresser_mut); //zablokowanie fryzjera żeby rozesłał broadcast do wątków oczekujących w ticket lock, że jeden z nich może go opuścić
         currIn = currentClient; //ustawienie numeru aktualnie obsługiwanego klienta dla mutexu fryzjera
-        pthread_cond_broadcast(&hairdresser_cond);
-        pthread_mutex_lock(&currClient_mut);
-        pthread_mutex_unlock(&hairdresser_mut);
-        pthread_cond_wait(&currClient_cond, &currClient_mut);
-        pthread_mutex_unlock(&currClient_mut);
+        pthread_cond_broadcast(&hairdresser_cond); //broadcast mówiący o tym, że klient może usiąść na fotel
+        pthread_mutex_lock(&currClient_mut); //mutex na oczekiwanie na przyjście klienta
+        pthread_mutex_unlock(&hairdresser_mut); //odblokowanie fryzjera
+        pthread_cond_wait(&currClient_cond, &currClient_mut); //oczekiwanie aż klient będzie gotowy do zajęcia fotela
+        pthread_mutex_unlock(&currClient_mut); //klient jest gotowy
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni ponieważ klient zajął już fotel
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 } else
                     spots = atoi(optarg);
-                freeSpots = atoi(optarg);
+                    freeSpots = atoi(optarg);
                 break;
             case 'h':
                 if (atoi(optarg) <= 0) {

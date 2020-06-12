@@ -210,6 +210,7 @@ int main(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 } else
                     spots = atoi(optarg);
+                    freeSpots = atoi(optarg)
                 break;
             case 'h':
                 if (atoi(optarg) <= 0) {
