@@ -30,13 +30,13 @@ pthread_mutex_t armchair = PTHREAD_MUTEX_INITIALIZER;
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
 int resignedClients = 0; // liczba klientów, którzy zrezygnowali z wizyty
-int clients = 10;
-int actualClient = 0;
-int currentClient = -1;
-int passedClients = 0;
-bool debug = false;
-int haircuttingTime = 3;
-int clientsTime = 2;
+int clients = 10; //liczba klientów
+int currentClient = -1; //numer klienta aktualnie zajmującego fotel (dla mutexu poczekalni)
+int passedClients = 0; //suma liczby obsłużonych klientów i klientów którzy zrezygnowali
+bool debug = false; //czy wypisuje kolejki
+int haircuttingTime = 3; //maksymalny cas ścinania klienta w ms
+int clientsTime = 2; //maksymalny czas między tworzeniem wątków kliwntów w ms
+int currIn = -1; //numer klienta aktualnie zajmującego fotel (dla mutexu fryzjera)
 
 void printQueues(){ //wypisywanie kolejek
     if(waiting == NULL){ //wypisywanie kolejki oczekujących
@@ -164,7 +164,7 @@ void *hairdresserRoom(){
         if(debug) {
             printQueues();
         }
-        pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?
+        pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera ?3
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni
         wait_random_time(haircuttingTime);
@@ -212,6 +212,7 @@ int main(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 } else
                     spots = atoi(optarg);
+                    freeSpots = spots;
                 break;
             case 'h':
                 if (atoi(optarg) <= 0) {
@@ -232,10 +233,6 @@ int main(int argc, char *argv[]) {
                 exit(EXIT_FAILURE);
         }
     }
-    printf("clients: %d\n", clients);
-    printf("spots: %d\n", spots);
-    printf("haircuttingTime: %d\n", haircuttingTime);
-    printf("clientsTime: %d\n", clientsTime);
 
     sem_init(&client,0,0);
     sem_init(&hairdresser,0,0);
