@@ -147,9 +147,9 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         }
         printf("Wszedł: %d\n\n", nr_client);
         pthread_mutex_unlock(&hairdresser_mut);//odblokowanie mutexu zablokowanego przez wchodzący do fryzjera wątek
-        pthread_mutex_lock(&currClient_mut); //zablokowamie mutexu  ustawiającego konkretnego klienta
-        pthread_cond_signal(&currClient_cond); //wysłanie sygnału że klient wyszedł z ticket locka i jest gotowy do zajęcia fotela
-        pthread_mutex_unlock(&currClient_mut);
+        pthread_mutex_lock(&currClient_mut); //zablokowanie mutexu pozwalającego klientowi wejść do fryzjera
+        pthread_cond_signal(&currClient_cond); //wysłanie sygnału że klient wyszedł z ticket locka i wchodzi do fryzjera
+        pthread_mutex_unlock(&currClient_mut); //odblokowanie mutexu pozwalającego klientowi wejść do fryzjera
     }
     else{
         passedClients++;
@@ -181,9 +181,9 @@ void *hairdresserRoom(){
         pthread_cond_broadcast(&hairdresser_cond); //broadcast mówiący o tym, że klient może usiąść na fotel
         pthread_mutex_lock(&currClient_mut); //mutex na oczekiwanie na przyjście klienta
         pthread_mutex_unlock(&hairdresser_mut); //odblokowanie fryzjera
-        pthread_cond_wait(&currClient_cond, &currClient_mut); //oczekiwanie aż klient będzie gotowy do zajęcia fotela
-        pthread_mutex_unlock(&currClient_mut); //klient jest gotowy
-        pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera
+        pthread_cond_wait(&currClient_cond, &currClient_mut); //oczekiwanie aż klient wejdzie do fryzjera
+        pthread_mutex_unlock(&currClient_mut); //klient wszedł do środka
+        pthread_mutex_lock(&armchair);//kioent zajmuje fotel
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni ponieważ klient zajął już fotel
         wait_random_time(haircuttingTime); //obsługa klienta

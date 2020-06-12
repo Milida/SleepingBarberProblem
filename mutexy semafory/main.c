@@ -162,7 +162,7 @@ void *hairdresserRoom(){
         if(debug) {
             printQueues();
         }
-        pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera
+        pthread_mutex_lock(&armchair);//klient zajmuje fotel
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni ponieważ klient zajął już fotel
         wait_random_time(haircuttingTime); //obsługa klienta
