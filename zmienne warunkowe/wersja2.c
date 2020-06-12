@@ -24,10 +24,12 @@ Queue *last_resigned = NULL; //trzyma ostatniego klienta, który zrezygnował, �
 
 pthread_cond_t client_cond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t hairdresser_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t currClient_cond = PTHREAD_COND_INITIALIZER;
 
 pthread_mutex_t waitingRoom = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t armchair = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t hairdresser_mut = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t currClient_mut = PTHREAD_MUTEX_INITIALIZER;
 
 int spots = 7; //ilość miejsc w poczekalni
 int freeSpots = 7; //ilość wolnych miejsc
@@ -141,9 +143,14 @@ void *newClient(void *num){ //funkcja rozpoczynająca 'wizytę' klienta
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni ponieważ klient już zajął miejsce
         pthread_mutex_lock(&hairdresser_mut); //ticket lock wpuszczający klientów, kiedy to oni zajęli miejsce u fryzjera
         while(nr_client != currIn){
+            //printf("Kręci się: %d\n", nr_client);
             pthread_cond_wait(&hairdresser_cond, &hairdresser_mut);//czekanie na sygnał, że ktoś z kolejki zajął fotel
         }
+        printf("Wyszedł: %d\n\n", nr_client);
         pthread_mutex_unlock(&hairdresser_mut);//odblokowanie mutexu zablokowanego przez wchodzący do fryzjera wątek
+        pthread_mutex_lock(&currClient_mut);
+        pthread_cond_signal(&currClient_cond);
+        pthread_mutex_unlock(&currClient_mut);
     }
     else{
         passedClients++;
@@ -173,7 +180,11 @@ void *hairdresserRoom(){
         pthread_mutex_lock(&hairdresser_mut); //zablokowanie fryzjera żeby rozesłał broadcast do wątków oczekujących w ticket lock, że jeden z nich może go opuścić
         currIn = currentClient; //ustawienie numeru aktualnie obsługiwanego klienta dla mutexu fryzjera
         pthread_cond_broadcast(&hairdresser_cond);
+        //puts("SYGNAŁ");
+        pthread_mutex_lock(&currClient_mut);
         pthread_mutex_unlock(&hairdresser_mut);
+        pthread_cond_wait(&currClient_cond, &currClient_mut);
+        pthread_mutex_unlock(&currClient_mut);
         pthread_mutex_lock(&armchair);//blokuje fotel u fryzjera
         passedClients++;
         pthread_mutex_unlock(&waitingRoom); //odblokowanie poczekalni ponieważ klient zajął już fotel
@@ -274,9 +285,11 @@ int main(int argc, char *argv[]) {
 
     pthread_cond_destroy(&client_cond);
     pthread_cond_destroy(&hairdresser_cond);
+    pthread_cond_destroy(&currClient_cond);
     pthread_mutex_destroy(&waitingRoom);
     pthread_mutex_destroy(&armchair);
     pthread_mutex_destroy(&hairdresser_mut);
+    pthread_mutex_destroy(&currClient_mut);
     clean_queue(); //czyszczenie kolejki klientów, którzy zrezygnowali
     exit(EXIT_SUCCESS);
 }
